@@ -27,6 +27,14 @@ Requires Python 3.9+ and Ollama running locally. On CPU, a review can take a min
 
 Copy `skills/sql-schema-review/` into your agent's skills folder. Then ask the agent to review your schema.
 
+## Demo
+
+![Schema Sentinel reviewing examples/bad_rides.sql](docs/demo.png)
+
+## Limitations
+
+A 4B model on CPU is slow, and its reviews can be verbose and occasionally miss an issue (it caught most of the planted flaws in `examples/bad_rides.sql`). Output is streamed so you can watch it work. Treat the review as a first pass, not a replacement for human review.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
