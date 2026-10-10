@@ -11,6 +11,14 @@ OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "qwen3:4b"
 SKILL_PATH = Path(__file__).parent / "skills" / "sql-schema-review" / "SKILL.md"
 
+TASK = (
+    "/no_think\n"
+    "Review this schema. Do not narrate or restate the checklist. "
+    "Output only the issues you found, as a numbered list, maximum 10, "
+    "each in the format: Severity | table.column | Problem | Fix. "
+    "Start the list immediately.\n\n"
+)
+
 
 def load_instructions() -> str:
     """Read the skill file and strip the YAML frontmatter."""
@@ -20,15 +28,16 @@ def load_instructions() -> str:
     return text.strip()
 
 
-def review(schema_sql: str) -> str:
+def review(schema_sql: str) -> None:
+    """Send the schema to the local model and print the review as it streams in."""
     payload = {
         "model": MODEL,
-        "stream": False,
+        "stream": True,
         "think": False,  # skip Qwen3's slow reasoning mode on CPU
-        "options": {"temperature": 0.2, "num_ctx": 4096},
+        "options": {"temperature": 0.2, "num_ctx": 4096, "num_predict": 900},
         "messages": [
             {"role": "system", "content": load_instructions()},
-            {"role": "user", "content": f"/no_think\nReview this schema:\n\n{schema_sql}"},
+            {"role": "user", "content": TASK + schema_sql},
         ],
     }
     req = urllib.request.Request(
@@ -38,7 +47,14 @@ def review(schema_sql: str) -> str:
     )
     try:
         with urllib.request.urlopen(req, timeout=900) as resp:
-            return json.loads(resp.read())["message"]["content"]
+            for line in resp:
+                if not line.strip():
+                    continue
+                chunk = json.loads(line)
+                print(chunk.get("message", {}).get("content", ""), end="", flush=True)
+                if chunk.get("done"):
+                    break
+        print()
     except urllib.error.URLError:
         sys.exit("Could not reach Ollama at localhost:11434. Is it running?")
 
@@ -47,8 +63,8 @@ def main() -> None:
     if len(sys.argv) != 2:
         sys.exit("Usage: python sentinel.py path/to/schema.sql")
     schema = Path(sys.argv[1]).read_text(encoding="utf-8")
-    print(f"Reviewing {sys.argv[1]} with {MODEL} (this can take a minute on CPU)...\n")
-    print(review(schema))
+    print(f"Reviewing {sys.argv[1]} with {MODEL} (CPU-only; output streams below)...\n")
+    review(schema)
 
 
 if __name__ == "__main__":

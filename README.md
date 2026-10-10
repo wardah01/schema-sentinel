@@ -12,7 +12,7 @@ Built for the Hacktoberfest 2026 open-source AI challenge. Open-weight AI is the
 
 ## Model
 
-Runs `qwen3:4b`, an open-weight model from Alibaba's Qwen team, locally via Ollama on CPU. The model has its own license (listed on its [Ollama page](https://ollama.com/library/qwen3)). This project's own code is MIT-licensed.
+Runs `qwen3:4b`, an open-weight model from Alibaba's Qwen team, locally via Ollama on CPU. See the model's official page for its license terms. This project's own code is MIT-licensed.
 
 ## Usage
 
